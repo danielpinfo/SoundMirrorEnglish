@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Usage:
+# OWNER=danielpinfo REPO=soundmirror-phoneme-backend WORKFLOW=deploy.yml REF=main ./run_workflow_gh.sh
+# or edit the defaults below
+
+OWNER="${OWNER:-danielpinfo}"
+REPO="${REPO:-soundmirror-phoneme-backend}"
+WORKFLOW="${WORKFLOW:-deploy.yml}"   # file name in .github/workflows or workflow-id
+REF="${REF:-main}"
+
+echo "Triggering workflow $WORKFLOW on $OWNER/$REPO (ref=$REF) using gh..."
+
+# run the workflow
+gh workflow run "$WORKFLOW" --repo "$OWNER/$REPO" --ref "$REF"
+
+# (optional) find the most recent run for that workflow and follow it
+sleep 2
+LATEST_RUN_ID=$(gh run list --repo "$OWNER/$REPO" --workflow "$WORKFLOW" --limit 1 --json databaseId --jq '.[0].databaseId')
+if [ -n "$LATEST_RUN_ID" ]; then
+  echo "Watching run ID: $LATEST_RUN_ID"
+  gh run watch "$LATEST_RUN_ID" --repo "$OWNER/$REPO"
+else
+  echo "Could not find run id; check Actions page in GitHub."
+fi
